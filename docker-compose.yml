@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+  influxdb:
+    container_name: influxdb
+    image: influxdb:1.8.3
+    ports:
+      - 8086:8086
+    volumes:
+      - ./influx.conf:/etc/influxdb/influxdb.conf
+      - ${influxVolume}:/var/lib/influxdb
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - monitoring
+
+  chronograf:
+    image: chronograf:1.8.8
+    ports:
+      - 8888:8888
+    volumes:
+      - ${chronoVolume}:/var/lib/chronograf
+    depends_on:
+      - influxdb
+    environment:
+      INFLUXDB_URL: "http://influxdb:8086"
+      INFLUXDB_USERNAME: ${username} 
+      INFLUXDB_PASSWORD: ${password}
+    networks:
+      - monitoring
+
+  kapacitor:
+    image: kapacitor:1.5.7
+    volumes:
+      - ./kapacitor.conf:/etc/kapacitor/kapacitor.conf
+      - ${kapacitorVolume}:/var/lib/kapacitor
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      KAPACITOR_INFLUXDB_0_USERNAME: ${username}
+      KAPACITOR_INFLUXDB_0_PASSWORD: ${password}
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    external:
+      name: monitoring
